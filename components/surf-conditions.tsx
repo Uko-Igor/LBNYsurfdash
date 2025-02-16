@@ -1,62 +1,89 @@
 'use client'
 
-import { WeatherCard } from "./weather-card"
 import { Compass } from "./compass"
-import { WaveChart } from "./wave-chart"
-import { Waves, Wind, Thermometer, Droplets, Clock, Calendar, TrendingUp } from "lucide-react"
 import { useEffect, useState } from "react"
 import axios from 'axios'
-
-interface NDCBData {
-  timestamp: string;
-  WDIR: string;
-  WSPD: string;
-  GST: string;
-  WVHT: string;
-  STEEPNESS: string;
-  SwH: string;
-  SwP: string;
-  SwD: string;
-  ATMP: string;
-  WTMP: string;
-  CHILL: string;
-  APD: string;
-}
-
-// Helper function to extract numeric value from string like "12.3 ft" -> 12.3
-const extractNumber = (value: string | undefined) => {
-  if (!value) return 0
-  const match = value.match(/[\d.]+/)
-  return match ? parseFloat(match[0]) : 0
-}
-
-// Helper function to extract direction from string like "SE (123°)" -> "SE"
-const extractDirection = (value: string | undefined) => {
-  if (!value) return 'N'
-  const match = value.match(/([NSEW]+)/)
-  return match ? match[1] : 'N'
-}
-
-// Helper function to extract degrees from string like "SE (123°)" -> 123
-const extractDegrees = (value: string | undefined) => {
-  if (!value) return 0
-  const match = value.match(/\((\d+)°\)/)
-  return match ? parseInt(match[1]) : 0
-}
+import { SurfData } from "@/app/api/surf-data/route"
+import { WaveChart } from "./wave-chart"
+import { TemperatureGauge } from "./temperature-gauge"
+import { TemperatureIndicator } from "./ui/temperature-indicator"
 
 export default function SurfConditions() {
-  const [data, setData] = useState<NDCBData | null>(null)
+  const [data, setData] = useState<SurfData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [surfReport, setSurfReport] = useState<string | null>(null)
+  const [reportLoading, setReportLoading] = useState(false)
+
+  const fetchSurfReport = async (waveData: SurfData) => {
+    try {
+      setReportLoading(true)
+      const response = await axios.post('/api/surf-report', { waveData })
+      setSurfReport(response.data.report)
+    } catch (err) {
+      console.error('Error fetching surf report:', err)
+      setSurfReport('Unable to generate surf report at this time.')
+    } finally {
+      setReportLoading(false)
+    }
+  }
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true)
         const response = await axios.get('/api/surf-data')
+        console.log('Raw API Response:', response.data)
+        
+        // Add detailed logging for wave height values
+        console.log('Raw wave height values:', {
+          WVHT: response.data.WVHT,
+          SwH: response.data.SwH,
+          WWH: response.data.WWH,
+          type: {
+            WVHT: typeof response.data.WVHT,
+            SwH: typeof response.data.SwH,
+            WWH: typeof response.data.WWH,
+          }
+        })
+        
+        // Log wave periods
+        console.log('Wave Periods:', {
+          swell: response.data.SwP,
+          wind: response.data.WWP,
+          average: response.data.APD
+        })
+        
+        // Log directions
+        console.log('Wave & Wind Directions:', {
+          swell: response.data.SwD,
+          wind: response.data.WWD,
+          windDir: response.data.WDIR
+        })
+        
+        // Log temperature data
+        console.log('Temperatures:', {
+          air: response.data.ATMP,
+          water: response.data.WTMP,
+          windChill: response.data.CHILL
+        })
+
+        // Add detailed wind direction logging
+        console.log('Wind Direction Data:', {
+          raw: response.data.WDIR,
+          type: typeof response.data.WDIR,
+          parsed: parseFloat(response.data.WDIR),
+          bearing: response.data.WDIR ? `${response.data.WDIR}° true` : 'N/A'
+        });
+
         setData(response.data)
-        setLoading(false)
+        // Fetch surf report when we get new data
+        fetchSurfReport(response.data)
+        setError(null)
       } catch (err) {
-        setError('Failed to fetch surf conditions')
+        setError('Failed to fetch surf data')
+        console.error('Error fetching surf data:', err)
+      } finally {
         setLoading(false)
       }
     }
@@ -66,128 +93,166 @@ export default function SurfConditions() {
     return () => clearInterval(interval)
   }, [])
 
-  if (loading) return (
-    <div className="min-h-screen bg-slate-950 p-6 flex items-center justify-center">
-      <div className="animate-pulse text-white text-xl">Loading surf conditions...</div>
-    </div>
-  )
-  
-  if (error) return (
-    <div className="min-h-screen bg-slate-950 p-6 flex items-center justify-center">
-      <div className="text-red-400 text-xl">{error}</div>
-    </div>
-  )
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-white">Loading surf conditions...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-500">{error}</div>
+      </div>
+    )
+  }
+
+  if (!data) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-white">No data available</div>
+      </div>
+    )
+  }
+
+  // Add wind direction debug log before rendering
+  console.log('Compass Direction:', {
+    WDIR: data.WDIR,
+    parsed: parseFloat(data.WDIR || '0'),
+    final: data.WDIR || 'N'
+  });
 
   return (
     <div className="space-y-6">
-      {/* Header with timestamp */}
-      <div className="text-center mb-4">
-        <h1 className="text-3xl font-bold mb-2">Surf Conditions Dashboard</h1>
-        <div className="flex items-center justify-center gap-2 text-slate-300">
-          <Clock className="w-5 h-5" />
-          <p>Updated {data?.timestamp || 'N/A'}</p>
-        </div>
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-white mb-2">Lincoln Blvd, Long Beach</h2>
+        <p className="text-gray-400">
+          Updated {data.timestamp || 'N/A'}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <WeatherCard title="Wave Summary">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Waves className="w-8 h-8 text-blue-400" />
-              <span className="text-5xl font-bold text-white">{extractNumber(data?.WVHT).toFixed(1)}</span>
-              <span className="text-2xl text-slate-300">ft</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-slate-300">
-              <div>
-                <div className="text-sm text-slate-400">Wave Period</div>
-                <div className="text-lg">{extractNumber(data?.APD).toFixed(1)} sec</div>
-              </div>
-              <div>
-                <div className="text-sm text-slate-400">Steepness</div>
-                <div className="text-lg">{data?.STEEPNESS || 'N/A'}</div>
-              </div>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Live Surf Report Card - Expert interpretation */}
+        <div className="p-6 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-3">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-slate-300 text-sm">Live Surf Report</h3>
+            <span className="text-xs text-slate-400">AI-Generated</span>
           </div>
-        </WeatherCard>
-
-        <WeatherCard title="Swell Wave Height">
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Waves className="w-8 h-8 text-blue-400" />
-              <span className="text-5xl font-bold text-white">{extractNumber(data?.SwH).toFixed(1)}</span>
-              <span className="text-2xl text-slate-300">ft</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-slate-300">
-              <div>
-                <div className="text-sm text-slate-400">Period</div>
-                <div className="text-lg">{extractNumber(data?.SwP).toFixed(1)} sec</div>
+            {reportLoading ? (
+              <div className="text-center py-4">
+                <div className="text-white">Generating surf report...</div>
               </div>
-              <div>
-                <div className="text-sm text-slate-400">Direction</div>
-                <div className="text-lg">{extractDirection(data?.SwD)}</div>
+            ) : surfReport ? (
+              <div className="prose prose-invert max-w-none">
+                <div className="text-slate-200 text-base leading-relaxed tracking-wide font-light" style={{ lineHeight: '2' }}>
+                  {surfReport}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-4">
+                <div className="text-white">No surf report available</div>
+              </div>
+            )}
           </div>
-        </WeatherCard>
+        </div>
 
-        <WeatherCard title="Wind Conditions">
+        {/* Temperature & Wind Card - Critical for comfort and safety */}
+        <div className="p-4 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-3">
+          <h3 className="text-slate-300 text-sm mb-2">Temperature & Wind</h3>
           <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold tracking-wide text-white">
+                  {(parseFloat(data.ATMP || '0'))?.toFixed(1)}°F
+                </div>
+                <div className="text-sm text-slate-400 font-light tracking-wider mt-1">Air</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold tracking-wide text-white">
+                  {(parseFloat(data.WTMP || '0'))?.toFixed(1)}°F
+                </div>
+                <div className="text-sm text-slate-400 font-light tracking-wider mt-1">Water</div>
+              </div>
+            </div>
             <Compass 
-              direction={extractDegrees(data?.WDIR).toString()}
-              speed={extractNumber(data?.WSPD)}
-              gust={extractNumber(data?.GST)}
+              direction={String(parseFloat(data.WDIR || '0'))}
+              speed={parseFloat(data.WSPD || '0')}
+              gust={parseFloat(data.GST || '0')}
             />
           </div>
-        </WeatherCard>
+        </div>
 
-        <WeatherCard title="Significant Wave Height">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Waves className="w-8 h-8 text-blue-500" />
-              <span className="text-5xl font-bold text-white">{extractNumber(data?.WVHT).toFixed(1)}</span>
-              <span className="text-2xl text-slate-300">ft</span>
+        {/* Significant Wave Height Card - Most important overall wave info */}
+        <div className="p-6 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-2">
+          <h3 className="text-slate-300 text-sm mb-4">Significant Wave Height</h3>
+          <div className="text-4xl font-bold text-white mb-4">
+            {data.WVHT?.replace(/ ft$/, '') || 'N/A'} ft
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-sm text-slate-400 mb-2">
+            <div>
+              <p className="mb-1">Wave Steepness</p>
+              <p className="text-white">{data.STEEPNESS || 'N/A'}</p>
             </div>
-            <div className="grid grid-cols-2 gap-4 text-slate-300">
-              <div>
-                <div className="text-sm text-slate-400">Wave Steepness</div>
-                <div className="text-lg text-slate-300">{data?.STEEPNESS || 'N/A'}</div>
-              </div>
-              <div>
-                <div className="text-sm text-slate-400">Average Period</div>
-                <div className="text-lg text-slate-300">{extractNumber(data?.APD).toFixed(1)} sec</div>
-              </div>
+            <div>
+              <p className="mb-1">Average Period</p>
+              <p className="text-white">{data.APD?.replace(/ sec$/, '') || 'N/A'} sec</p>
             </div>
           </div>
-        </WeatherCard>
+          <p className="text-xs text-slate-500 mt-2 leading-tight">
+            Significant Wave Height is the average height (meters) of the highest one-third of the waves during a 20 minute sampling period.
+          </p>
+        </div>
 
-        <WeatherCard title="Temperature">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Thermometer className="w-6 h-6 text-red-400" />
-                <span className="text-3xl font-bold text-white">{extractNumber(data?.ATMP).toFixed(1)}°F</span>
-              </div>
-              <div className="text-sm text-slate-400">Air Temp</div>
+        {/* Swell Wave Card */}
+        <div className="p-6 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg">
+          <h3 className="text-slate-300 text-sm mb-4">Swell Wave</h3>
+          <div className="text-4xl font-bold text-white mb-4">
+            {data.SwH?.replace(/ ft$/, '') || 'N/A'} ft
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-sm text-slate-400 mb-2">
+            <div>
+              <p className="mb-1">Period</p>
+              <p className="text-white">{data.SwP?.replace(/ sec$/, '') || 'N/A'} sec</p>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Droplets className="w-6 h-6 text-blue-400" />
-                <span className="text-3xl font-bold text-white">{extractNumber(data?.WTMP).toFixed(1)}°F</span>
-              </div>
-              <div className="text-sm text-slate-400">Water Temp</div>
+            <div>
+              <p className="mb-1">Direction</p>
+              <p className="text-white">{data.SwD || 'N/A'}</p>
             </div>
           </div>
-        </WeatherCard>
-      </div>
+          <p className="text-xs text-slate-500 mt-2 leading-tight">
+            Swell height is the vertical distance (meters) between any swell crest and the succeeding swell wave trough.
+          </p>
+        </div>
 
-      {/* Wave Chart */}
-      <div className="mt-8 max-w-7xl mx-auto">
-        <WeatherCard title="Wave Trends">
-          <WaveChart
-            waveHeight={data?.WVHT || '0 ft'}
-            swellHeight={data?.SwH || '0 ft'}
-          />
-        </WeatherCard>
+        {/* Wind Wave Card */}
+        <div className="p-6 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg">
+          <h3 className="text-slate-300 text-sm mb-4">Wind Wave</h3>
+          <div className="text-4xl font-bold text-white mb-4">
+            {data.WWH?.replace(/ ft$/, '') || 'N/A'} ft
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-sm text-slate-400 mb-2">
+            <div>
+              <p className="mb-1">Period</p>
+              <p className="text-white">{data.WWP?.replace(/ sec$/, '') || 'N/A'} sec</p>
+            </div>
+            <div>
+              <p className="mb-1">Direction</p>
+              <p className="text-white">{data.WWD || 'N/A'}</p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-2 leading-tight">
+            Wind waves are generated by local winds and typically have shorter periods than swell waves.
+          </p>
+        </div>
+
+        {/* Wave Trends Card - Full width for better visualization */}
+        <div className="p-6 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-3">
+          <h3 className="text-slate-300 text-sm mb-4">Wave Trends</h3>
+          <WaveChart data={data.waveTrend || []} />
+        </div>
       </div>
     </div>
   )

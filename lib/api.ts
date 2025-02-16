@@ -1,6 +1,8 @@
 export interface WaveTrendPoint {
-  time: string;
-  height: number;
+  timestamp: string | Date;
+  wvht: number;
+  swh: number;
+  wwh: number;
 }
 
 export interface ForecastTrend {

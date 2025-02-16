@@ -1,217 +1,206 @@
 'use client'
 
-import { WeatherCard } from "./components/weather-card"
-import { Compass } from "./components/compass"
-import { Waves, Wind, Thermometer, Droplets } from "lucide-react"
-import { useEffect, useState } from "react"
-import axios from 'axios'
-import WeatherDashboard from "./components/weather-dashboard"
-import { SurfData } from './lib/api'
-
-interface NDCBData {
-  timestamp: string;
-  WDIR: string;
-  WSPD: string;
-  GST: string;
-  WVHT: string;
-  SwH: string;
-  SwP: string;
-  SwD: string;
-  ATMP: string;
-  WTMP: string;
-  CHILL: string;
-  APD: string;
-  waveTrend?: { time: string; height: number; }[];
-}
-
-const transformToSurfData = (data: NDCBData | null): SurfData | null => {
-  if (!data) return null;
-  
-  return {
-    waveHeight: parseFloat(data.WVHT?.split(' ')[0] || '0'),
-    swellHeight: parseFloat(data.SwH?.split(' ')[0] || '0'),
-    period: parseFloat(data.SwP?.split(' ')[0] || '0'),
-    windSpeed: parseFloat(data.WSPD?.split(' ')[0] || '0'),
-    windGusts: parseFloat(data.GST?.split(' ')[0] || '0'),
-    windDirection: parseFloat(data.WDIR?.split(' ')[0] || '0'),
-    airTemperature: parseFloat(data.ATMP?.split(' ')[0] || '0'),
-    waterTemperature: parseFloat(data.WTMP?.split(' ')[0] || '0'),
-    feelsLike: parseFloat(data.CHILL?.split(' ')[0] || '0'),
-    waveTrend: data.waveTrend || [],
-    forecastTrend: { 
-      height: parseFloat(data.WVHT?.split(' ')[0] || '0') * 1.2 // Estimate future trend
-    },
-    swellDirection: data.SwD || 'N/A'
-  };
-};
+import { useEffect, useState } from 'react';
+import { SurfData } from './app/api/surf-data/route';
+import { WeatherCard } from '@/components/ui/weather-card';
+import WaveTrendChart from '@/components/wave-trend-chart';
+import { Compass } from '@/components/compass';
 
 export default function SurfConditions() {
-  const [data, setData] = useState<NDCBData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [data, setData] = useState<SurfData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('https://www.ndbc.noaa.gov/station_page.php?station=44065&uom=E&tz=EST', {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        })
-        
-        // Process the response using similar logic to the Python scraping function
-        const parser = new DOMParser()
-        const doc = parser.parseFromString(response.data, 'text/html')
-        
-        // Extract data from tables similar to Python scraping logic
-        const tables = doc.querySelectorAll('table')
-        const data: NDCBData = {
-          timestamp: '',
-          WDIR: 'N/A',
-          WSPD: 'N/A',
-          GST: 'N/A',
-          WVHT: 'N/A',
-          SwH: 'N/A',
-          SwP: 'N/A',
-          SwD: 'N/A',
-          ATMP: 'N/A',
-          WTMP: 'N/A',
-          CHILL: 'N/A',
-          APD: 'N/A'
-        }
-
-        // Extract timestamp
-        const textContent = doc.body.textContent || ''
-        const timestampMatch = textContent.match(/Conditions at 44065 as of\s*\((\d{1,2}:\d{2}\s*(?:am|pm)\s*EST)\s*on\s*(\d{2}\/\d{2}\/\d{4})\)/)
-        if (timestampMatch) {
-          const [_, timeStr, dateStr] = timestampMatch
-          const formattedTime = timeStr.toLowerCase().replace(' est', '')
-          const [month, day, year] = dateStr.split('/')
-          const formattedDate = `${month}/${day}/${year}`
-          data.timestamp = `${formattedTime} on ${formattedDate}`
-        }
-
-        tables.forEach(table => {
-          const rows = table.querySelectorAll('tr')
-          rows.forEach(row => {
-            const cells = row.querySelectorAll('td, th')
-            if (cells.length >= 2) {
-              const text = cells[0].textContent?.trim() || ''
-              const value = cells[1].textContent?.trim() || ''
-
-              // Map the data similar to Python scraping logic
-              if (/Wind Direction|WDIR/i.test(text)) {
-                const dirMatch = value.match(/([NSEW]+)\s*\(\s*(\d+)\s*deg/)
-                if (dirMatch) {
-                  data.WDIR = `${dirMatch[1]} (${dirMatch[2]}°)`
-                }
-              } else if (text === "Wind Speed (WSPD):" || text === "Wind Speed:") {
-                const match = value.match(/([\d.]+)/)
-                if (match) data.WSPD = `${match[1]} kts`
-              }
-              // Add similar mappings for other data points
-            }
-          })
-        })
-
-        setData(data)
-        setLoading(false)
-      } catch (err) {
-        setError('Failed to fetch surf conditions')
-        setLoading(false)
+        setLoading(true);
+        const response = await fetch('/api/surf-data');
+        const jsonData = await response.json();
+        setData(jsonData);
+        setError(null);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to fetch surf data');
+      } finally {
+        setLoading(false);
       }
-    }
+    };
 
-    fetchData()
-    const interval = setInterval(fetchData, 300000) // Refresh every 5 minutes
-    return () => clearInterval(interval)
-  }, [])
+    fetchData();
+    const interval = setInterval(fetchData, 300000); // Refresh every 5 minutes
 
-  if (loading) return <div className="min-h-screen bg-transparent p-6 text-white">Loading...</div>
-  if (error) return <div className="min-h-screen bg-transparent p-6 text-white">{error}</div>
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-white text-lg">Loading surf conditions...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-red-500 text-lg">{error}</div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-white text-lg">No data available</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-transparent p-6">
-      <div className="max-w-7xl mx-auto mb-8 text-center">
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2">
-          Lincoln Blvd, Long Beach
-        </h1>
-        <p className="text-lg md:text-xl text-slate-300">
-          as of {data?.timestamp || 'N/A'}
-        </p>
+    <div className="max-w-7xl mx-auto space-y-6 p-4">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-white mb-2 glow-text">Surf Dashboard</h1>
+        <p className="text-gray-400">Updated {data.timestamp || 'N/A'}</p>
       </div>
 
-      <div className="bg-slate-900/5 backdrop-blur-sm rounded-xl p-6 max-w-7xl mx-auto mb-8 border border-slate-400/10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <WeatherCard title="Swell Wave Height">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Waves className="w-6 h-6 text-blue-400" />
-                <span className="text-4xl font-bold">{data?.SwH?.split(' ')[0] || 'N/A'}</span>
-                <span className="text-xl">ft</span>
-              </div>
-              <div className="text-sm text-slate-300">
-                Period: {data?.SwP || 'N/A'}
-              </div>
-              <div className="text-sm text-slate-400">Direction: {data?.SwD || 'N/A'}</div>
-            </div>
-          </WeatherCard>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <WeatherCard title="Wave Analysis">
+          <div className="space-y-2">
+            <div className="text-2xl font-bold text-blue-400">{data.WVHT || 'N/A'}</div>
+            <div className="text-gray-400">Swell Period: {data.SwP || 'N/A'}</div>
+            <div className="text-gray-400">Direction: {data.SwD || 'N/A'}</div>
+          </div>
+        </WeatherCard>
 
-          <WeatherCard title="Wind Conditions">
-            <div className="space-y-2">
-              <div className="flex justify-center items-center mb-4">
-                <div className="w-48 h-48">
-                  <Compass 
-                    direction={data?.WDIR?.split(' ')[0] || 'N'} 
-                    speed={parseFloat(data?.WSPD?.split(' ')[0] || '0')}
-                    gust={parseFloat(data?.GST?.split(' ')[0] || '0')}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-xl font-semibold">{data?.WSPD || 'N/A'}</div>
-                  <div className="text-sm text-slate-400">Wind Speed</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold">{data?.GST || 'N/A'}</div>
-                  <div className="text-sm text-slate-400">Wind Gusts</div>
-                </div>
-              </div>
-            </div>
-          </WeatherCard>
+        <WeatherCard title="Wind Conditions">
+          <div className="space-y-2">
+            <div className="text-2xl font-bold text-green-400">{data.WSPD || 'N/A'}</div>
+            <div className="text-gray-400">Direction: {data.WDIR || 'N/A'}</div>
+            <div className="text-gray-400">Gusts: {data.GST || 'N/A'}</div>
+          </div>
+        </WeatherCard>
 
-          <WeatherCard title="Temperature">
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Thermometer className="w-6 h-6 text-red-400" />
-                  <span className="text-4xl font-bold">{data?.ATMP || 'N/A'}</span>
-                </div>
-                <div className="text-sm text-slate-400">Air Temperature</div>
+        <WeatherCard title="Temperature">
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-gray-400">Air</div>
+                <div className="text-xl font-semibold text-white">{data.ATMP || 'N/A'}</div>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Droplets className="w-6 h-6 text-blue-400" />
-                  <span className="text-4xl font-bold">{data?.WTMP || 'N/A'}</span>
-                </div>
-                <div className="text-sm text-slate-400">Water Temperature</div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Wind className="w-6 h-6 text-cyan-400" />
-                  <span className="text-4xl font-bold">{data?.CHILL || 'N/A'}</span>
-                </div>
-                <div className="text-sm text-slate-400">Wind Chill</div>
+              <div>
+                <div className="text-gray-400">Water</div>
+                <div className="text-xl font-semibold text-white">{data.WTMP || 'N/A'}</div>
               </div>
             </div>
-          </WeatherCard>
+          </div>
+        </WeatherCard>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-gray-800/50 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Wave Trend</h2>
+          <WaveTrendChart data={data} />
+        </div>
+        <div className="bg-gray-800/50 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Wind Direction</h2>
+          <div className="flex justify-center">
+            <Compass 
+              direction={data.WDIR} 
+              speed={parseFloat(data.WSPD)} 
+              gust={parseFloat(data.GST)} 
+            />
+          </div>
         </div>
       </div>
 
-      <div className="mt-12">
-        <WeatherDashboard data={transformToSurfData(data)} />
-      </div>
+      {data.analysis && (
+        <div className="bg-gray-800 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Surf Analysis</h2>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-medium text-white mb-2">Summary</h3>
+              <p className="text-gray-300">{data.analysis.summary}</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-white mb-2">Technical Details</h3>
+              <p className="text-gray-300">{data.analysis.technicalDetails}</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-white mb-2">Recommendations</h3>
+              <p className="text-gray-300">{data.analysis.recommendations}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
+}
+
+function WaveIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+      <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+      <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+    </svg>
+  );
+}
+
+function WindIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" />
+      <path d="M9.6 4.6A2 2 0 1 1 11 8H2" />
+      <path d="M12.6 19.4A2 2 0 1 0 14 16H2" />
+    </svg>
+  );
+}
+
+function TempIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
+    </svg>
+  );
+}
+
+function WaterTempIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M6.8 11a6 6 0 1 0 10.396 0l-5.197-8-5.2 8Z" />
+    </svg>
+  );
 } 

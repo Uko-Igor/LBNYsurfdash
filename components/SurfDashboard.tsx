@@ -22,16 +22,12 @@ interface TopSummaryProps {
 const TopSummary: React.FC<TopSummaryProps> = ({ data }) => {
   if (!data) return null;
   
-  const waveIcon = data.waveHeight > 5 ? '🌊🌊🌊' : data.waveHeight > 2 ? '🌊🌊' : '🌊';
-  
   return (
-    <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-slate-800/50 rounded-lg">
-      <span className="text-4xl">{waveIcon}</span>
-      <span className="text-2xl font-bold">{data.waveHeight?.toFixed(1) || '0.0'} ft @ {data.period?.toFixed(1) || '0.0'} sec</span>
-      <span className="text-2xl" style={{ transform: `rotate(${data.windDirection || 0}deg)` }}>⬆️</span>
-      <span className="text-xl">{data.windSpeed?.toFixed(1) || '0.0'} kts (Gusts to {data.windGusts?.toFixed(1) || '0.0'} kts)</span>
-      <span className="text-2xl">🌡️ {data.airTemperature?.toFixed(1) || '0.0'}°F (Feels Like {data.feelsLike?.toFixed(1) || '0.0'}°F)</span>
-      <p className="w-full mt-2 text-slate-300">{getSurfReportSummary(data)}</p>
+    <div className="flex flex-col items-center gap-4 mb-6 p-4 bg-slate-800/50 rounded-lg">
+      <div className="text-center">
+        <span className="text-6xl font-bold">{data.waveHeight?.toFixed(1) || '0.0'} ft</span>
+        <p className="text-xl mt-2">{getSurfReportSummary(data)}</p>
+      </div>
     </div>
   );
 };
@@ -44,11 +40,10 @@ const WaveCard: React.FC<WaveCardProps> = ({ data }) => {
   if (!data) return null;
   
   return (
-    <Card title="Wave Conditions">
-      <div className="space-y-2">
-        <p className="text-2xl font-bold">{data.waveHeight?.toFixed(1) || '0.0'} ft @ {data.period?.toFixed(1) || '0.0'} sec</p>
-        <p>Swell Height: <span className="font-semibold">{data.swellHeight?.toFixed(1) || '0.0'} ft</span></p>
-        <p>Swell Direction: <span className="font-semibold">{data.swellDirection || 'N/A'}</span></p>
+    <Card title="Wave">
+      <div className="text-center space-y-4">
+        <p className="text-5xl font-bold">{data.period?.toFixed(1) || '0.0'} sec</p>
+        <p className="text-2xl">{data.swellDirection || 'N/A'}</p>
       </div>
     </Card>
   );
@@ -57,55 +52,11 @@ const WaveCard: React.FC<WaveCardProps> = ({ data }) => {
 const WindCard: React.FC<WaveCardProps> = ({ data }) => {
   if (!data) return null;
 
-  // Format data for RadialBar chart
-  const maxValue = Math.max(data.windSpeed || 0, data.windGusts || 0);
-  const radialData = [
-    {
-      id: 'wind',
-      data: [
-        {
-          x: 'Wind',
-          y: data.windSpeed || 0,
-        }
-      ]
-    },
-    {
-      id: 'gusts',
-      data: [
-        {
-          x: 'Gusts',
-          y: data.windGusts || 0,
-        }
-      ]
-    }
-  ];
-
   return (
-    <Card title={`Wind from ${data.swellDirection || 'N/A'}`}>
-      <div className="h-48">
-        <ResponsiveRadialBar
-          data={radialData}
-          valueFormat=">-.1f"
-          padding={0.4}
-          cornerRadius={2}
-          margin={{ top: 40, right: 40, bottom: 40, left: 40 }}
-          radialAxisStart={{ tickSize: 5, tickPadding: 5, tickRotation: 0 }}
-          circularAxisOuter={{ tickSize: 5, tickPadding: 12, tickRotation: 0 }}
-          startAngle={-90 + (data.windDirection || 0)}
-          endAngle={270 + (data.windDirection || 0)}
-          colors={['#4e99e6', '#8acbff']}
-          tracksColor="#2a2a40"
-          enableRadialGrid={false}
-          enableCircularGrid={false}
-          radialAxisMax={maxValue * 1.2}
-          enableLabels={false}
-          isInteractive={true}
-          animate={true}
-        />
-      </div>
-      <div className="text-center space-y-1 mt-2">
-        <p>Wind Speed: <span className="font-bold">{data.windSpeed?.toFixed(1) || '0.0'} kts</span></p>
-        <p>Wind Gusts: <span className="text-slate-300">{data.windGusts?.toFixed(1) || '0.0'} kts</span></p>
+    <Card title="Wind">
+      <div className="text-center space-y-4">
+        <p className="text-5xl font-bold">{data.windSpeed?.toFixed(1) || '0.0'} kts</p>
+        <p className="text-2xl">Gusts {data.windGusts?.toFixed(1) || '0.0'} kts</p>
       </div>
     </Card>
   );
@@ -116,10 +67,9 @@ const TemperatureCard: React.FC<WaveCardProps> = ({ data }) => {
 
   return (
     <Card title="Temperature">
-      <div className="space-y-2">
-        <p>Air Temperature: <span className="font-bold">{data.airTemperature?.toFixed(1) || '0.0'}°F</span></p>
-        <p>Water Temperature: <span className="font-bold">{data.waterTemperature?.toFixed(1) || '0.0'}°F</span></p>
-        <p>Feels Like: <span className="text-slate-300">{data.feelsLike?.toFixed(1) || '0.0'}°F</span></p>
+      <div className="text-center space-y-4">
+        <p className="text-5xl font-bold">{data.airTemperature?.toFixed(1) || '0.0'}°F</p>
+        <p className="text-2xl">Water {data.waterTemperature?.toFixed(1) || '0.0'}°F</p>
       </div>
     </Card>
   );
@@ -130,41 +80,40 @@ const WaveTrendChart: React.FC<WaveCardProps> = ({ data }) => {
 
   const chartData = [
     {
-      id: 'waveHeight',
+      id: 'Significant Wave Height',
       data: data.waveTrend.map(item => ({ 
-        x: new Date(item.time), 
-        y: item.height 
+        x: new Date(item.timestamp), 
+        y: item.wvht 
       })),
     },
     {
-      id: 'forecast',
-      data: [
-        { 
-          x: new Date(data.waveTrend[data.waveTrend.length - 1].time), 
-          y: data.waveTrend[data.waveTrend.length - 1].height 
-        },
-        {
-          x: new Date(new Date(data.waveTrend[data.waveTrend.length - 1].time).getTime() + (6 * 60 * 60 * 1000)),
-          y: (data.forecastTrend?.height || 0) + data.waveTrend[data.waveTrend.length - 1].height
-        }
-      ],
-    },
+      id: 'Swell Height',
+      data: data.waveTrend.map(item => ({ 
+        x: new Date(item.timestamp), 
+        y: item.swh 
+      })),
+    }
   ];
 
   return (
     <Card title="Wave Trend">
-      <div className="h-72">
+      <div style={{ height: '300px' }}>
         <ResponsiveLine
           data={chartData}
-          margin={{ top: 20, right: 40, bottom: 60, left: 60 }}
+          margin={{ top: 20, right: 120, bottom: 60, left: 60 }}
           xScale={{ type: 'time', format: 'native', precision: 'hour' }}
-          xFormat="time:%I %p"
-          yScale={{ type: 'linear', min: 0, max: 'auto' }}
+          xFormat="time:%I:%M %p"
+          yScale={{ 
+            type: 'linear', 
+            min: 0, 
+            max: 8, // Set max to 8 feet which is more reasonable for typical wave heights
+            stacked: false 
+          }}
           axisTop={null}
           axisRight={null}
           axisBottom={{
-            format: '%I %p',
-            tickValues: 'every 6 hours',
+            format: '%I:%M %p',
+            tickValues: 'every 3 hours',
             legend: 'Time',
             legendOffset: 45,
             legendPosition: 'middle',
@@ -178,8 +127,12 @@ const WaveTrendChart: React.FC<WaveCardProps> = ({ data }) => {
             legendOffset: -40,
             legendPosition: 'middle',
           }}
+          enablePoints={false}
+          enableGridX={true}
+          enableGridY={true}
           colors={{ scheme: 'category10' }}
-          pointSize={10}
+          lineWidth={2}
+          pointSize={8}
           pointColor={{ theme: 'background' }}
           pointBorderWidth={2}
           pointBorderColor={{ from: 'serieColor' }}
@@ -191,17 +144,23 @@ const WaveTrendChart: React.FC<WaveCardProps> = ({ data }) => {
               ticks: { text: { fill: '#ddd' } },
               legend: { text: { fill: '#ddd', fontSize: 14 } },
             },
+            grid: {
+              line: {
+                stroke: '#2d374850',
+                strokeWidth: 1
+              }
+            },
           }}
           legends={[
             {
-              anchor: 'bottom-right',
+              anchor: 'right',
               direction: 'column',
               justify: false,
               translateX: 100,
               translateY: 0,
               itemsSpacing: 0,
               itemDirection: 'left-to-right',
-              itemWidth: 80,
+              itemWidth: 100,
               itemHeight: 20,
               itemOpacity: 0.75,
               symbolSize: 12,
@@ -267,16 +226,15 @@ const SurfDashboard: React.FC<SurfDashboardProps> = ({ data }) => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-6">
+    <div className="min-h-screen bg-slate-900 text-white p-4 md:p-6 space-y-4">
       <TopSummary data={data} />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6">
         <WaveCard data={data} />
         <WindCard data={data} />
         <TemperatureCard data={data} />
       </div>
       <div className="space-y-6">
         <WaveTrendChart data={data} />
-        <SurfReport data={data} />
       </div>
     </div>
   );
