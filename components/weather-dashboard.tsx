@@ -15,7 +15,7 @@ import {
   AreaChart
 } from 'recharts';
 import { SurfData } from '../lib/api';
-import Compass from './Compass';
+import { Compass } from './compass';
 
 interface WaveDataPoint {
   timestamp: string;
@@ -35,17 +35,17 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
   useEffect(() => {
     if (data && data.waveTrend) {
       const formattedData = data.waveTrend.map(point => ({
-        timestamp: point.time,
-        swellHeight: Number(point.swellHeight.toFixed(2)) || 0,
-        significantHeight: Number(point.height.toFixed(2)) || 0,
-        maxHeight: Number((Math.max(point.height, point.swellHeight) * 1.2).toFixed(2)) || 0
+        timestamp: typeof point.timestamp === 'string' ? point.timestamp : point.timestamp.toISOString(),
+        swellHeight: Number(point.swh.toFixed(2)) || 0,
+        significantHeight: Number(point.wvht.toFixed(2)) || 0,
+        maxHeight: Number((Math.max(point.wvht, point.swh) * 1.2).toFixed(2)) || 0
       }));
       setWaveData(formattedData);
     }
   }, [data]);
 
-  const currentSwellHeight = data?.SwH ? parseFloat(data.SwH) : 0;
-  const currentSignificantHeight = data?.WVHT ? parseFloat(data.WVHT) : 0;
+  const currentSwellHeight = data?.swellHeight || 0;
+  const currentSignificantHeight = data?.waveHeight || 0;
 
   // Format data for Recharts with proper date handling
   const formatDataForChart = (data: WaveDataPoint[]) => {
@@ -271,13 +271,17 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
           </div>
           <div className="p-4 flex flex-col items-center justify-center">
             <div className="relative w-48 h-48 mb-4">
-              <Compass direction={data?.WDIR || 'N'} speed={parseFloat(data?.WSPD || '0')} />
+              <Compass 
+                direction={String(data?.windDirection || 0)} 
+                speed={data?.windSpeed || 0} 
+                gust={data?.windGusts || 0}
+              />
             </div>
             <div className="text-center">
               <p className="text-sm text-gray-400">Wind Speed</p>
-              <p className="text-2xl font-bold glow-text">{data?.WSPD || '0'} kts</p>
+              <p className="text-2xl font-bold glow-text">{data?.windSpeed || '0'} kts</p>
               <p className="text-sm text-gray-400 mt-2">Gusts</p>
-              <p className="text-2xl font-bold glow-text">{data?.GST || '0'} kts</p>
+              <p className="text-2xl font-bold glow-text">{data?.windGusts || '0'} kts</p>
             </div>
           </div>
         </div>

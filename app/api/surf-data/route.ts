@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { analyzeSurfConditions } from '@/lib/gemini';
+import { analyzeSurfConditions } from '@/lib/azure-openai';
 
 export interface WaveTrendPoint {
   timestamp: string;

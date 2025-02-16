@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import { SurfData } from './app/api/surf-data/route';
+import { SurfData } from '@/app/api/surf-data/route';
 import { WeatherCard } from '@/components/ui/weather-card';
-import WaveTrendChart from '@/components/wave-trend-chart';
 import { Compass } from '@/components/compass';
+import { WaveChart } from '@/components/wave-chart';
+import { TemperatureGauge } from '@/components/temperature-gauge';
+import { TemperatureIndicator } from '@/components/ui/temperature-indicator';
 
 export default function SurfConditions() {
   const [data, setData] = useState<SurfData | null>(null);
@@ -100,7 +102,11 @@ export default function SurfConditions() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-gray-800/50 rounded-lg p-6">
           <h2 className="text-xl font-semibold text-white mb-4">Wave Trend</h2>
-          <WaveTrendChart data={data} />
+          <WaveChart data={data.waveTrend?.map(point => ({
+            timestamp: point.timestamp,
+            wvht: parseFloat(point.wvht.toString()),
+            swh: parseFloat(point.swh.toString())
+          })) || []} />
         </div>
         <div className="bg-gray-800/50 rounded-lg p-6">
           <h2 className="text-xl font-semibold text-white mb-4">Wind Direction</h2>

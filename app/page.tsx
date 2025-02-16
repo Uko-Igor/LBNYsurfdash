@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import SurfConditions from '@/components/Surf-conditions'
+import SurfConditions from '@/components/surf-conditions'
 
 const Background = dynamic(() => import('@/components/Background'), { ssr: false })
 

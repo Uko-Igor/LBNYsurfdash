@@ -7,7 +7,7 @@ import * as random from "maath/random"
 
 export function BackgroundScene() {
   const ref = useRef<any>()
-  const sphere = random.inSphere(new Float32Array(5000), { radius: 1.5 })
+  const sphere = new Float32Array(random.inSphere(new Float32Array(5000), { radius: 1.5 }))
 
   useFrame((state, delta) => {
     if (ref.current) {

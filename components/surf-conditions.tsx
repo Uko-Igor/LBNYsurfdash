@@ -1,12 +1,12 @@
 'use client'
 
-import { Compass } from "./compass"
+import { Compass } from "@/components/compass"
 import { useEffect, useState } from "react"
 import axios from 'axios'
 import { SurfData } from "@/app/api/surf-data/route"
-import { WaveChart } from "./wave-chart"
-import { TemperatureGauge } from "./temperature-gauge"
-import { TemperatureIndicator } from "./ui/temperature-indicator"
+import { WaveChart } from "@/components/wave-chart"
+import { TemperatureGauge } from "@/components/temperature-gauge"
+import { TemperatureIndicator } from "@/components/ui/temperature-indicator"
 
 export default function SurfConditions() {
   const [data, setData] = useState<SurfData | null>(null)
