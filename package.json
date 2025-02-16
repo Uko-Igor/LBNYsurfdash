@@ -1,0 +1,48 @@
+{
+  "name": "resurf",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@fontsource/inter": "^5.1.1",
+    "@nivo/core": "^0.88.0",
+    "@nivo/line": "^0.88.0",
+    "@nivo/radial-bar": "^0.88.0",
+    "@react-three/drei": "^9.121.5",
+    "@react-three/fiber": "^8.17.14",
+    "@types/cheerio": "^0.22.35",
+    "@types/node": "^20.17.19",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.2.19",
+    "@types/three": "^0.173.0",
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
+    "date-fns": "^2.30.0",
+    "framer-motion": "^12.4.3",
+    "lodash": "^4.17.21",
+    "lucide-react": "^0.331.0",
+    "maath": "^0.10.8",
+    "next": "^14.1.0",
+    "react": "^18.2.0",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.15.1",
+    "three": "^0.173.0",
+    "typescript": "^5.7.3"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.15",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.14",
+    "tailwindcss": "^3.3.0"
+  }
+}

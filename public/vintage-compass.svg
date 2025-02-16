@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="200" cy="200" r="190" fill="#f4d03f" stroke="#8b4513" stroke-width="2"/>
+  
+  <!-- Compass rose -->
+  <g transform="translate(200,200)">
+    <!-- Main directions -->
+    <g stroke="#8b4513" stroke-width="2">
+      <line x1="0" y1="-180" x2="0" y2="180"/>
+      <line x1="-180" y1="0" x2="180" y2="0"/>
+      <line x1="-127.28" y1="-127.28" x2="127.28" y2="127.28"/>
+      <line x1="-127.28" y1="127.28" x2="127.28" y2="-127.28"/>
+    </g>
+    
+    <!-- Cardinal direction labels -->
+    <g font-family="serif" font-size="24" fill="#8b4513" text-anchor="middle">
+      <text x="0" y="-160" dy="0.3em">N</text>
+      <text x="160" y="0" dx="-0.1em" dy="0.3em">E</text>
+      <text x="0" y="160" dy="0.3em">S</text>
+      <text x="-160" y="0" dx="0.1em" dy="0.3em">W</text>
+    </g>
+    
+    <!-- Intercardinal direction labels -->
+    <g font-family="serif" font-size="20" fill="#8b4513" text-anchor="middle">
+      <text x="113" y="-113" dy="0.3em">NE</text>
+      <text x="113" y="113" dy="0.3em">SE</text>
+      <text x="-113" y="113" dy="0.3em">SW</text>
+      <text x="-113" y="-113" dy="0.3em">NW</text>
+    </g>
+    
+    <!-- Degree markers -->
+    <g stroke="#8b4513" stroke-width="1">
+      {Array.from({length: 72}, (_, i) => {
+        const angle = i * 5;
+        const rad = angle * Math.PI / 180;
+        const length = i % 2 === 0 ? 15 : 10;
+        const x1 = Math.sin(rad) * 170;
+        const y1 = -Math.cos(rad) * 170;
+        const x2 = Math.sin(rad) * (170 - length);
+        const y2 = -Math.cos(rad) * (170 - length);
+        return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+      }).join('')}
+    </g>
+    
+    <!-- Decorative elements -->
+    <circle cx="0" cy="0" r="150" fill="none" stroke="#8b4513" stroke-width="1"/>
+    <circle cx="0" cy="0" r="130" fill="none" stroke="#8b4513" stroke-width="1"/>
+    
+    <!-- Fleur-de-lis at North -->
+    <path d="M0,-140 L5,-130 L0,-135 L-5,-130 Z" fill="#8b4513"/>
+  </g>
+</svg> 
