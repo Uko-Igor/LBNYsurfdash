@@ -73,7 +73,15 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
       return (
         <div className="data-card p-3">
           <p className="text-sm font-medium text-neon-blue">
-            {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {date.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            })} {date.toLocaleTimeString('en-US', { 
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true
+            })}
           </p>
           {payload[0] && (
             <p className="text-sm">
@@ -110,7 +118,7 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="data-card bg-dark-blue/50">
+          <div className="data-card bg-dark-blue/[0.07]">
             <div className="p-6 text-center relative overflow-hidden">
               <div 
                 className="absolute inset-0 opacity-20 z-0 wave-bg"
@@ -125,7 +133,7 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
               </div>
               
               <div className="flex justify-center items-center mt-4">
-                <div className="h-3 w-64 bg-dark-blue/50 rounded-full overflow-hidden">
+                <div className="h-3 w-64 bg-dark-blue/[0.07] rounded-full overflow-hidden">
                   <div 
                     className="h-full rounded-full transition-all duration-500 ease-out"
                     style={{
@@ -144,7 +152,7 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
             </div>
           </div>
 
-          <div className="data-card bg-dark-blue/50">
+          <div className="data-card bg-dark-blue/[0.07]">
             <div className="p-6 text-center relative overflow-hidden">
               <div 
                 className="absolute inset-0 opacity-20 z-0 wave-bg"
@@ -159,7 +167,7 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
               </div>
               
               <div className="flex justify-center items-center mt-4">
-                <div className="h-3 w-64 bg-dark-blue/50 rounded-full overflow-hidden">
+                <div className="h-3 w-64 bg-dark-blue/[0.07] rounded-full overflow-hidden">
                   <div 
                     className="h-full rounded-full transition-all duration-500 ease-out"
                     style={{
@@ -173,7 +181,7 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
           </div>
         </div>
         
-        <div className="data-card bg-dark-blue/50">
+        <div className="data-card bg-dark-blue/[0.07]">
           <div className="p-4 border-b border-gray-800">
             <h3 className="text-xl font-semibold glow-text">5-Day Wave Height Trend</h3>
             <p className="text-sm text-gray-400">Historical wave measurements from the past 5 days</p>
@@ -203,7 +211,14 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
                     scale="time"
                     tickFormatter={(unixTime) => {
                       const date = new Date(unixTime);
-                      return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                      return `${date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                      })} ${date.toLocaleTimeString('en-US', { 
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}`;
                     }}
                     stroke="#94a3b8"
                     angle={-45}
@@ -237,7 +252,7 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-          <div className="bg-slate-800/50 rounded-lg shadow p-4 border border-slate-700">
+          <div className="bg-slate-800/[0.07] rounded-lg shadow p-4 border border-slate-700">
             <h3 className="text-slate-400 text-sm mb-1">Average Height</h3>
             <p className="text-2xl font-semibold text-emerald-400">
               {waveData.length > 0 
@@ -246,7 +261,7 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
             </p>
           </div>
           
-          <div className="bg-slate-800/50 rounded-lg shadow p-4 border border-slate-700">
+          <div className="bg-slate-800/[0.07] rounded-lg shadow p-4 border border-slate-700">
             <h3 className="text-slate-400 text-sm mb-1">Maximum Height</h3>
             <p className="text-2xl font-semibold text-amber-400">
               {waveData.length > 0 
@@ -255,7 +270,7 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
             </p>
           </div>
           
-          <div className="bg-slate-800/50 rounded-lg shadow p-4 border border-slate-700">
+          <div className="bg-slate-800/[0.07] rounded-lg shadow p-4 border border-slate-700">
             <h3 className="text-slate-400 text-sm mb-1">Current Trend</h3>
             <p className="text-2xl font-semibold text-purple-400">
               {waveData.length > 0 
@@ -265,7 +280,7 @@ const WeatherDashboard = ({ data }: WeatherDashboardProps) => {
           </div>
         </div>
 
-        <div className="data-card bg-dark-blue/50">
+        <div className="data-card bg-dark-blue/[0.07]">
           <div className="p-4 border-b border-gray-800">
             <h3 className="text-xl font-semibold glow-text">Wind Conditions</h3>
           </div>

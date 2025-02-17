@@ -70,11 +70,27 @@ function celsiusToFahrenheit(celsius: number): number {
 export async function GET() {
   try {
     const headers = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     };
 
     // Fetch current conditions using HTML scraping
-    const response = await axios.get('https://www.ndbc.noaa.gov/station_page.php?station=44065', { headers });
+    const response = await axios.get('https://www.ndbc.noaa.gov/station_page.php?station=44065', { 
+      headers,
+      // Add timeout
+      timeout: 10000,
+      // Add cache busting parameter
+      params: {
+        t: new Date().getTime()
+      }
+    });
+    
+    if (!response.data) {
+      throw new Error('No data received from NDBC');
+    }
+
     const $ = cheerio.load(response.data);
 
     // Initialize data object with default values
@@ -101,11 +117,19 @@ export async function GET() {
     // Extract timestamp from the conditions caption
     const timestampText = $('.titleDataHeader').first().text();
     console.log('Raw timestamp text:', timestampText);
-    const timestampMatch = timestampText.match(/\((.*?EST on \d{2}\/\d{2}\/\d{4})\)/);
+    // Updated regex pattern to match the actual format: (6:30 am EST)1130 GMT on 02/17/2025
+    const timestampMatch = timestampText.match(/\((\d+:\d+ [ap]m EST)\)\d+ GMT on (\d{2}\/\d{2}\/\d{4})/i);
     console.log('Timestamp match:', timestampMatch);
     if (timestampMatch) {
-      const [_full, timestamp] = timestampMatch;
-      surfData.timestamp = `Updated ${timestamp}`;
+      const [_, time, date] = timestampMatch;
+      surfData.timestamp = `Updated ${time} on ${date}`;
+    } else {
+      // Fallback timestamp extraction if the first pattern doesn't match
+      const simpleMatch = timestampText.match(/(\d+:\d+ [ap]m EST).*?(\d{2}\/\d{2}\/\d{4})/i);
+      if (simpleMatch) {
+        const [_, time, date] = simpleMatch;
+        surfData.timestamp = `Updated ${time} on ${date}`;
+      }
     }
 
     // Parse the current conditions table
@@ -192,12 +216,25 @@ export async function GET() {
 
     surfData.waveTrend = waveTrendData;
 
-    return NextResponse.json(surfData);
-  } catch (error) {
+    return NextResponse.json(surfData, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate, private',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+  } catch (error: any) {
     console.error('Error fetching surf data:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch surf data' },
-      { status: 500 }
+      { error: 'Failed to fetch surf data', details: error.message },
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, private',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      }
     );
   }
 } 

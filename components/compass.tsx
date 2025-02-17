@@ -11,17 +11,23 @@ export function Compass({ direction, speed, gust }: CompassProps) {
   let directionDeg = 0;
   
   if (typeof direction === 'string') {
-    // Check if it's in the format "XXX ( YY deg true )"
-    const degMatch = direction.match(/\(?\s*(\d+)\s*deg/i);
-    if (degMatch) {
-      directionDeg = parseFloat(degMatch[1]);
+    // First try to parse as a simple number
+    const numericValue = parseFloat(direction);
+    if (!isNaN(numericValue)) {
+      directionDeg = numericValue;
     } else {
-      // If not in deg format, try to parse as a number
-      directionDeg = parseFloat(direction);
+      // Check if it's in the format "XXX ( YY deg true )"
+      const degMatch = direction.match(/\(?\s*(\d+)\s*deg/i);
+      if (degMatch) {
+        directionDeg = parseFloat(degMatch[1]);
+      }
     }
   } else if (typeof direction === 'number') {
     directionDeg = direction;
   }
+
+  // Ensure the direction is within 0-360 range
+  directionDeg = ((directionDeg % 360) + 360) % 360;
 
   // No need to add 180 degrees anymore since we want to show where wind is coming FROM
   // The arrow will point in the direction the wind is coming from
@@ -134,6 +140,23 @@ export function Compass({ direction, speed, gust }: CompassProps) {
           style={{ transform: `rotate(${directionDeg || 0}deg)` }}
         >
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 400">
+            <defs>
+              <filter id="algaeGlow">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feColorMatrix
+                  in="coloredBlur"
+                  type="matrix"
+                  values="0 0 0 0 0.062
+                        0 0 0 0 0.725
+                        0 0 0 0 0.505
+                        0 0 0 1 0"
+                />
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
             <g transform="translate(200,200)">
               <path
                 d="M0,-140 L10,-105 L4,-105 L4,100 L-4,100 L-4,-105 L-10,-105 Z"

@@ -27,24 +27,24 @@ export async function analyzeSurfConditions(surfData: string): Promise<SurfAnaly
 
 ${surfData}
 
-Please structure your response in three distinct sections:
+Please structure your response in four distinct sections:
 
 1. CURRENT CONDITIONS SUMMARY:
-Provide a single, very concise phrase (maximum 25 characters) that captures the overall surf conditions.
+Provide a single, very concise phrase (maximum 35 characters) that captures the overall surf conditions.
 
 2. TECHNICAL ANALYSIS:
 - Wave mechanics (height, period, steepness)
 - Swell patterns and energy
 - Wind influence on wave shape
-- Environmental factors affecting conditions
-- Oceanographic interpretation of data
+- The best conditions for this area (Swell Direction=SE, ESE, E; Wind=NNW to NNE; Tide=Low-mid generally best)
+
 
 3. RECOMMENDATIONS:
-- Beginner surfer guidance
-- Intermediate surfer opportunities
-- Advanced surfer considerations
-- Safety precautions if necessary
-- Best spots/breaks for current conditions
+- What kind of surf board will be the best for the conditions
+- What is the best time to go surfing today
+- What is the best spot to surf today
+
+4. Surfing Fun Fact. 
 
 Format each section clearly and professionally, using technical terminology where appropriate.`;
 

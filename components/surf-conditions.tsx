@@ -32,9 +32,19 @@ export default function SurfConditions() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const response = await axios.get('/api/surf-data')
+        const response = await axios.get('/api/surf-data', {
+          // Add cache busting parameter
+          params: {
+            t: new Date().getTime()
+          }
+        })
+        console.log('Fetching data at:', new Date().toISOString())
         console.log('Raw API Response:', response.data)
         
+        if (!response.data) {
+          throw new Error('No data received from API')
+        }
+
         // Add detailed logging for wave height values
         console.log('Raw wave height values:', {
           WVHT: response.data.WVHT,
@@ -81,17 +91,27 @@ export default function SurfConditions() {
         fetchSurfReport(response.data)
         setError(null)
       } catch (err) {
-        setError('Failed to fetch surf data')
         console.error('Error fetching surf data:', err)
+        setError('Failed to fetch surf data')
+        // Retry after 30 seconds on error
+        setTimeout(fetchData, 30000)
       } finally {
         setLoading(false)
       }
     }
 
+    // Initial fetch
     fetchData()
+
+    // Set up interval for periodic updates
     const interval = setInterval(fetchData, 300000) // Refresh every 5 minutes
-    return () => clearInterval(interval)
-  }, [])
+
+    // Cleanup interval on component unmount
+    return () => {
+      console.log('Cleaning up interval')
+      clearInterval(interval)
+    }
+  }, []) // Empty dependency array means this effect runs once on mount
 
   if (loading) {
     return (
