@@ -100,10 +100,12 @@ export async function GET() {
 
     // Extract timestamp from the conditions caption
     const timestampText = $('.titleDataHeader').first().text();
-    const timestampMatch = timestampText.match(/Conditions at 44065 as of\s*\((.*?)\)\s*(.*?)\s*on\s*(.*?):/);
+    console.log('Raw timestamp text:', timestampText);
+    const timestampMatch = timestampText.match(/\((.*?EST on \d{2}\/\d{2}\/\d{4})\)/);
+    console.log('Timestamp match:', timestampMatch);
     if (timestampMatch) {
-      const [_full, time, _tz, date] = timestampMatch;
-      surfData.timestamp = `${time} on ${date}`;
+      const [_full, timestamp] = timestampMatch;
+      surfData.timestamp = `Updated ${timestamp}`;
     }
 
     // Parse the current conditions table
