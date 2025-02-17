@@ -125,21 +125,22 @@ export async function GET() {
     
     let extractedTimestamp = 'N/A';
     
-    // Try to extract time and date separately for more robustness
-    const timeMatch = timestampText.match(/(\d{1,2}:\d{2}\s*(?:am|pm|AM|PM)\s*(?:EST|EDT)?)/i);
-    const dateMatch = timestampText.match(/(\d{2}\/\d{2}\/\d{4})/);
+    // Pattern 1: Try to match the standard format "Conditions at 44065 as of(HH:MM am/pm EST)NNNN GMT on MM/DD/YYYY:"
+    const pattern1 = /\((\d{1,2}:\d{2}\s*(?:am|pm)\s*(?:EST|EDT))\).*?(\d{2}\/\d{2}\/\d{4})/i;
+    const matches = timestampText.match(pattern1);
     
-    if (timeMatch && dateMatch) {
-        const time = timeMatch[1].trim();
-        const date = dateMatch[1].trim();
+    if (matches) {
+        const [_, time, date] = matches;
         extractedTimestamp = `Updated ${time} on ${date}`;
-        console.log('Extracted timestamp components:', { time, date });
+        console.log('Pattern 1 match:', matches);
     } else {
-        // Fallback: try to find any timestamp-like text
-        const fullMatch = timestampText.match(/(?:as of|at)\s*(?:\()?([^)]+)(?:\))?/i);
-        if (fullMatch) {
-            extractedTimestamp = `Updated ${fullMatch[1].trim()}`;
-            console.log('Fallback timestamp extraction:', extractedTimestamp);
+        // Pattern 2: Fallback for other formats
+        const timeMatch = timestampText.match(/\((\d{1,2}:\d{2}\s*(?:am|pm)\s*(?:EST|EDT))\)/i);
+        const dateMatch = timestampText.match(/(\d{2}\/\d{2}\/\d{4})/);
+        
+        if (timeMatch && dateMatch) {
+            extractedTimestamp = `Updated ${timeMatch[1]} on ${dateMatch[1]}`;
+            console.log('Pattern 2 match - time:', timeMatch[1], 'date:', dateMatch[1]);
         }
     }
 

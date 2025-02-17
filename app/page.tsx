@@ -1,13 +1,9 @@
 'use client'
 
-import { dynamic as dynamicImport } from 'next/dynamic'
+import dynamic from 'next/dynamic'
 import SurfConditions from '@/components/surf-conditions'
 
-const Background = dynamicImport(() => import('@/components/Background'), { ssr: false })
-
-// Disable static generation for this page
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+const Background = dynamic(() => import('@/components/Background'), { ssr: false })
 
 export default function Home() {
   return (
