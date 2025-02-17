@@ -115,47 +115,31 @@ export async function GET() {
     };
 
     // Extract timestamp from the conditions caption
-    const timestampText = $('.titleDataHeader').first().text();
+    const timestampText = $('.titleDataHeader').first().text().trim();
     console.log('Raw HTML:', $('.titleDataHeader').first().html());
     console.log('Raw timestamp text:', timestampText);
     
-    // Try multiple patterns to extract timestamp
-    let timestampMatch = null;
-    let extractedTimestamp = null;
+    let extractedTimestamp = 'N/A';
     
-    // Pattern 1: Standard format
-    timestampMatch = timestampText.match(/\((\d+:\d+ [ap]m EST)\)\d+ GMT on (\d{2}\/\d{2}\/\d{4})/i);
-    console.log('Pattern 1 match:', timestampMatch);
+    // Try to extract time and date separately for more robustness
+    const timeMatch = timestampText.match(/(\d{1,2}:\d{2}\s*(?:am|pm|AM|PM)\s*(?:EST|EDT)?)/i);
+    const dateMatch = timestampText.match(/(\d{2}\/\d{2}\/\d{4})/);
     
-    if (!timestampMatch) {
-      // Pattern 2: Simpler format
-      timestampMatch = timestampText.match(/(\d+:\d+ [ap]m EST).*?(\d{2}\/\d{2}\/\d{4})/i);
-      console.log('Pattern 2 match:', timestampMatch);
-    }
-    
-    if (!timestampMatch) {
-      // Pattern 3: Most basic format
-      timestampMatch = timestampText.match(/(\d{1,2}:\d{2} [ap]m).*?(\d{2}\/\d{2}\/\d{4})/i);
-      console.log('Pattern 3 match:', timestampMatch);
-    }
-
-    if (timestampMatch) {
-      const [_, time, date] = timestampMatch;
-      extractedTimestamp = `Updated ${time} on ${date}`;
-      console.log('Successfully extracted timestamp:', extractedTimestamp);
+    if (timeMatch && dateMatch) {
+        const time = timeMatch[1].trim();
+        const date = dateMatch[1].trim();
+        extractedTimestamp = `Updated ${time} on ${date}`;
+        console.log('Extracted timestamp components:', { time, date });
     } else {
-      console.log('Failed to extract timestamp from:', timestampText);
-      // Last resort: Try to find any time and date separately
-      const timeMatch = timestampText.match(/(\d{1,2}:\d{2} ?(?:am|pm|AM|PM))/);
-      const dateMatch = timestampText.match(/(\d{2}\/\d{2}\/\d{4})/);
-      
-      if (timeMatch && dateMatch) {
-        extractedTimestamp = `Updated ${timeMatch[1]} on ${dateMatch[1]}`;
-        console.log('Fallback timestamp extraction:', extractedTimestamp);
-      }
+        // Fallback: try to find any timestamp-like text
+        const fullMatch = timestampText.match(/(?:as of|at)\s*(?:\()?([^)]+)(?:\))?/i);
+        if (fullMatch) {
+            extractedTimestamp = `Updated ${fullMatch[1].trim()}`;
+            console.log('Fallback timestamp extraction:', extractedTimestamp);
+        }
     }
 
-    surfData.timestamp = extractedTimestamp || 'N/A';
+    surfData.timestamp = extractedTimestamp;
     console.log('Final timestamp value:', surfData.timestamp);
 
     // Parse the current conditions table
