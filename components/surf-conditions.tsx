@@ -40,6 +40,8 @@ export default function SurfConditions() {
         })
         console.log('Fetching data at:', new Date().toISOString())
         console.log('Raw API Response:', response.data)
+        console.log('Timestamp value:', response.data.timestamp)
+        console.log('Full data object:', JSON.stringify(response.data, null, 2))
         
         if (!response.data) {
           throw new Error('No data received from API')
