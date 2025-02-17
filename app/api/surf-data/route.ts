@@ -3,6 +3,10 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { analyzeSurfConditions } from '@/lib/azure-openai';
 
+// Disable caching for this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export interface WaveTrendPoint {
   timestamp: string;
   wvht: number;

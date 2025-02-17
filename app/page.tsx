@@ -5,6 +5,10 @@ import SurfConditions from '@/components/surf-conditions'
 
 const Background = dynamic(() => import('@/components/Background'), { ssr: false })
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950/90">
