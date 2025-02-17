@@ -104,7 +104,7 @@ export default function SurfConditions() {
     fetchData()
 
     // Set up interval for periodic updates
-    const interval = setInterval(fetchData, 300000) // Refresh every 5 minutes
+    const interval = setInterval(fetchData, 600000) // Refresh every 10 minutes
 
     // Cleanup interval on component unmount
     return () => {
@@ -155,7 +155,7 @@ export default function SurfConditions() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Live Surf Report Card - Expert interpretation */}
-        <div className="p-6 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-3">
+        <div className="p-6 rounded-xl bg-slate-800/5 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-3">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-slate-300 text-sm">Live Surf Report</h3>
             <span className="text-xs text-slate-400">AI-Generated</span>
@@ -180,7 +180,7 @@ export default function SurfConditions() {
         </div>
 
         {/* Temperature & Wind Card - Critical for comfort and safety */}
-        <div className="p-4 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-3">
+        <div className="p-4 rounded-xl bg-slate-800/5 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-3">
           <h3 className="text-slate-300 text-sm mb-2">Temperature & Wind</h3>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -206,7 +206,7 @@ export default function SurfConditions() {
         </div>
 
         {/* Significant Wave Height Card - Most important overall wave info */}
-        <div className="p-6 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-2">
+        <div className="p-6 rounded-xl bg-slate-800/5 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-2">
           <h3 className="text-slate-300 text-sm mb-4">Significant Wave Height</h3>
           <div className="text-4xl font-bold text-white mb-4">
             {data.WVHT?.replace(/ ft$/, '') || 'N/A'} ft
@@ -227,7 +227,7 @@ export default function SurfConditions() {
         </div>
 
         {/* Swell Wave Card */}
-        <div className="p-6 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg">
+        <div className="p-6 rounded-xl bg-slate-800/5 backdrop-blur-[2px] border border-slate-700/20 shadow-lg">
           <h3 className="text-slate-300 text-sm mb-4">Swell Wave</h3>
           <div className="text-4xl font-bold text-white mb-4">
             {data.SwH?.replace(/ ft$/, '') || 'N/A'} ft
@@ -248,7 +248,7 @@ export default function SurfConditions() {
         </div>
 
         {/* Wind Wave Card */}
-        <div className="p-6 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg">
+        <div className="p-6 rounded-xl bg-slate-800/5 backdrop-blur-[2px] border border-slate-700/20 shadow-lg">
           <h3 className="text-slate-300 text-sm mb-4">Wind Wave</h3>
           <div className="text-4xl font-bold text-white mb-4">
             {data.WWH?.replace(/ ft$/, '') || 'N/A'} ft
@@ -269,7 +269,7 @@ export default function SurfConditions() {
         </div>
 
         {/* Wave Trends Card - Full width for better visualization */}
-        <div className="p-6 rounded-xl bg-slate-800/10 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-3">
+        <div className="p-6 rounded-xl bg-slate-800/5 backdrop-blur-[2px] border border-slate-700/20 shadow-lg md:col-span-3">
           <h3 className="text-slate-300 text-sm mb-4">Wave Trends</h3>
           <WaveChart data={data.waveTrend || []} />
         </div>
