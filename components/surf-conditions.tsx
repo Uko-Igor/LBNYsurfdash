@@ -151,7 +151,7 @@ export default function SurfConditions() {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-white mb-2">Lincoln Blvd, Long Beach</h2>
         <p className="text-gray-400">
-          Updated {data.timestamp || 'N/A'}
+          {data.timestamp !== 'N/A' ? `Updated ${data.timestamp}` : 'Updating...'}
         </p>
       </div>
 
@@ -169,7 +169,7 @@ export default function SurfConditions() {
               </div>
             ) : surfReport ? (
               <div className="prose prose-invert max-w-none">
-                <div className="text-slate-200 text-base leading-relaxed tracking-wide font-light" style={{ lineHeight: '2' }}>
+                <div className="text-slate-200 text-sm leading-relaxed tracking-wide font-light" style={{ lineHeight: '2' }}>
                   {surfReport}
                 </div>
               </div>

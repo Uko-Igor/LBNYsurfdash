@@ -125,23 +125,13 @@ export async function GET() {
     
     let extractedTimestamp = 'N/A';
     
-    // Pattern 1: Try to match the standard format "Conditions at 44065 as of(HH:MM am/pm EST)NNNN GMT on MM/DD/YYYY:"
-    const pattern1 = /\((\d{1,2}:\d{2}\s*(?:am|pm)\s*(?:EST|EDT))\).*?(\d{2}\/\d{2}\/\d{4})/i;
-    const matches = timestampText.match(pattern1);
+    // Updated pattern to match "Conditions at 44065 as of(9:10 pm EST on 02/20/2025)0210 GMT on 02/21/2025:"
+    const pattern = /\((\d{1,2}:\d{2}\s*(?:am|pm)\s*(?:EST|EDT))\s*on\s*(\d{2}\/\d{2}\/\d{4})\)/i;
+    const matches = timestampText.match(pattern);
     
     if (matches) {
         const [_, time, date] = matches;
-        extractedTimestamp = `Updated ${time} on ${date}`;
-        console.log('Pattern 1 match:', matches);
-    } else {
-        // Pattern 2: Fallback for other formats
-        const timeMatch = timestampText.match(/\((\d{1,2}:\d{2}\s*(?:am|pm)\s*(?:EST|EDT))\)/i);
-        const dateMatch = timestampText.match(/(\d{2}\/\d{2}\/\d{4})/);
-        
-        if (timeMatch && dateMatch) {
-            extractedTimestamp = `Updated ${timeMatch[1]} on ${dateMatch[1]}`;
-            console.log('Pattern 2 match - time:', timeMatch[1], 'date:', dateMatch[1]);
-        }
+        extractedTimestamp = `${time} on ${date}`;
     }
 
     surfData.timestamp = extractedTimestamp;

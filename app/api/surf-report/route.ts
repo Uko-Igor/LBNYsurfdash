@@ -14,55 +14,119 @@ const client = new AzureOpenAI({
   apiVersion: apiVersion || "2024-02-15-preview",
 });
 
+interface WaveData {
+  WVHT: string;
+  SwH: string;
+  WWH: string;
+  SwP: string;
+  WWP?: string;
+  APD: string;
+  SwD: string;
+  WDIR: string;
+  ATMP?: string;
+  WTMP: string;
+  STEEPNESS?: string;
+}
+
+function generateSurfReport(waveData: WaveData): string {
+  // Input validation
+  const requiredKeys = ["WVHT", "SwH", "WWH", "SwP", "APD", "SwD", "WDIR", "WTMP"];
+  const missingKeys = requiredKeys.filter(key => !(key in waveData));
+  if (missingKeys.length > 0) {
+    return `Error: Missing essential data for the surf report: ${missingKeys.join(', ')}`;
+  }
+
+  try {
+    const waveHeight = parseFloat(waveData.WVHT);
+    const swellHeight = parseFloat(waveData.SwH);
+    const windWaveHeight = parseFloat(waveData.WWH);
+    const swellPeriod = parseFloat(waveData.SwP);
+    const windWavePeriod = waveData.WWP ? parseFloat(waveData.WWP) : 0;
+    const averagePeriod = parseFloat(waveData.APD);
+    const swellDirection = waveData.SwD;
+    const windDirection = waveData.WDIR;
+    const airTemperature = waveData.ATMP ? parseFloat(waveData.ATMP) : "N/A";
+    const waterTemperature = parseFloat(waveData.WTMP);
+    const steepness = waveData.STEEPNESS || "N/A";
+
+    let report = `Surf Report:\n`;
+    report += `Wave Height: ${waveHeight.toFixed(1)}ft (Combined: ${swellHeight.toFixed(1)}ft swell + ${windWaveHeight.toFixed(1)}ft wind wave)\n`;
+    report += `Swell Period: ${swellPeriod.toFixed(1)}s, Average Period: ${averagePeriod.toFixed(1)}s\n`;
+
+    // Swell and Wind Direction Interpretation
+    report += `Swell Direction: ${swellDirection}, Wind Direction: ${windDirection}\n`;
+    if (swellDirection.toUpperCase().includes("NW") && windDirection.toUpperCase().includes("NW")) {
+      report += `  -> Onshore wind, expect choppy conditions.\n`;
+    } else if (
+      (swellDirection.toUpperCase().includes("SW") || swellDirection.toUpperCase().includes("W")) && 
+      (windDirection.toUpperCase().includes("N") || windDirection.toUpperCase().includes("NE"))
+    ) {
+      report += `  -> Offshore wind, expect cleaner, groomed waves.\n`;
+    } else if (
+      (swellDirection.toUpperCase().includes("SE") || swellDirection.toUpperCase().includes("E")) && 
+      (windDirection.toUpperCase().includes("W") || windDirection.toUpperCase().includes("NW"))
+    ) {
+      report += `  -> Offshore wind, expect cleaner, groomed waves.\n`;
+    } else {
+      report += `  -> Wind and swell directions are different, cross-shore conditions may vary.\n`;
+    }
+
+    if (windWavePeriod) {
+      report += `Wind Wave Period: ${windWavePeriod.toFixed(1)}s\n`;
+    }
+
+    if (steepness !== "N/A") {
+      report += `Wave Steepness: ${steepness}`;
+      if (steepness === "VERY_STEEP") {
+        report += ` (Expect fast, barreling waves, for experienced surfers).`;
+      } else if (steepness === "STEEP") {
+        report += ` (Expect relatively fast breaking waves).`;
+      } else if (steepness === "AVERAGE") {
+        report += ` (Average steepness).`;
+      } else if (steepness === "SWELL") {
+        report += ` (Expect gentle, slower breaking waves, potentially good for beginners).`;
+      }
+      report += `\n`;
+    }
+
+    report += `Water Temperature: ${waterTemperature.toFixed(1)}°F`;
+    if (airTemperature !== "N/A") {
+      report += `, Air Temperature: ${airTemperature.toFixed(1)}°F`;
+    }
+
+    return report;
+
+  } catch (error) {
+    return `Error: Invalid data format in input. Check data types. (${error})`;
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const data = await req.json();
     const { waveData } = data;
 
-    const messages: ChatCompletionMessageParam[] = [
-      {
-        role: "system",
-        content: `You are an experienced surf forecaster providing clear, easy-to-read surf reports. Keep your response brief and focused on what matters most to surfers. In 35 words, cover (skip the joke if no space left):
+    // Debug log of raw wave data
+    console.log('Raw Wave Data:', `
+Wave Height: ${waveData.WVHT}
+Swell Height: ${waveData.SwH}
+Wind Wave Height: ${waveData.WWH}
+Swell Period: ${waveData.SwP}
+Wind Wave Period: ${waveData.WWP}
+Average Period: ${waveData.APD}
+Swell Direction: ${waveData.SwD}
+Wind Direction: ${waveData.WDIR}
+Air Temperature: ${waveData.ATMP}
+Water Temperature: ${waveData.WTMP}
+Wave Steepness: ${waveData.STEEPNESS}
+    `);
 
-1. Overall surf quality and main wave height, Swell wave height, swell period, swell direction, wind wave height, wind wave period, average period. Remember these are the ideal conditions for this area (Swell Direction=SE, ESE, E; Wind=NNW to NNE; Tide=Low-mid generally best)
-2. How all the conditions are affecting the surf. 
-3. Conclude with a brief synthesis of overall conditions.
-4. Include a fun fact (don't say it's a fun fact and don't use ! symbol at the end) about surfing that most surfers don't know and will find intelligent. 
+    // Generate the surf report using our new function
+    const report = generateSurfReport(waveData);
 
-Use simple language and avoid technical jargon. Focus on practical insights rather than detailed measurements.`
-      },
-      {
-        role: "user",
-        content: `Tell me straight about today's surf conditions. Keep it brief but wise. Here are the measurements:
-
-          Wave Height: ${waveData.WVHT}
-          Swell Height: ${waveData.SwH}
-          Wind Wave Height: ${waveData.WWH}
-          Swell Period: ${waveData.SwP}
-          Wind Wave Period: ${waveData.WWP}
-          Average Period: ${waveData.APD}
-          Swell Direction: ${waveData.SwD}
-          Wind Direction: ${waveData.WDIR}
-          Air Temperature: ${waveData.ATMP}
-          Water Temperature: ${waveData.WTMP}
-          Wave Steepness: ${waveData.STEEPNESS}
-          
-          Share your wisdom about these conditions in a few clear sentences. Speak as if giving advice to a younger surfer.`
-      }
-    ];
-
-    const completion = await client.chat.completions.create({
-      model: deployment,
-      messages: messages,
-      max_tokens: 200,
-      temperature: 0.7,
-      top_p: 0.9,
-      frequency_penalty: 0.5,
-      presence_penalty: 0.3,
-    });
-
+    // Return the generated report
     return NextResponse.json({
-      report: completion.choices[0].message.content
+      report: report
     });
   } catch (error) {
     console.error('Error generating surf report:', error);
