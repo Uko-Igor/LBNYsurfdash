@@ -28,64 +28,30 @@ interface WaveData {
   STEEPNESS: string; // Wave Steepness
 }
 
-function generateSurfReport(waveData: WaveData): string {
-  // Convert string values to numbers
-  const waveHeight = parseFloat(waveData.WVHT);
-  const swellHeight = parseFloat(waveData.SwH);
-  const windWaveHeight = parseFloat(waveData.WWH);
-  const swellPeriod = parseFloat(waveData.SwP);
-  const windWavePeriod = parseFloat(waveData.WWP);
-  const avgPeriod = parseFloat(waveData.APD);
-  const windDir = parseInt(waveData.WDIR);
-  const airTemp = parseFloat(waveData.ATMP);
-  const waterTemp = parseFloat(waveData.WTMP);
+function createSurfReportPrompt(waveData: WaveData): string {
+  return `Role: You are a seasoned surf forecaster with a knack for explaining complex data simply.
 
-  // Check for missing or invalid data
-  if (isNaN(waveHeight) || isNaN(swellHeight) || isNaN(windWaveHeight) || 
-      isNaN(swellPeriod) || isNaN(windWavePeriod) || isNaN(avgPeriod) || 
-      isNaN(windDir) || isNaN(airTemp) || isNaN(waterTemp)) {
-    return "Unable to generate report due to missing or invalid data.";
-  }
+Task: Generate a concise surf report (approximately 50-80 words) using the provided data. Format your answer in clear paragraphs covering:
 
-  // Wave height interpretation
-  let waveDesc = "";
-  if (waveHeight < 1) waveDesc = "very small";
-  else if (waveHeight < 2) waveDesc = "small";
-  else if (waveHeight < 3) waveDesc = "mild";
-  else if (waveHeight < 4) waveDesc = "moderate";
-  else if (waveHeight < 6) waveDesc = "considerable";
-  else waveDesc = "large";
+- Overall Quality (e.g., "Fair," "Good," "Excellent," "Choppy," "Clean")
+- Key Data: Swell: ${waveData.SwH} at ${waveData.SwP} from ${waveData.SwD}. Wind: ${waveData.WDIR}°.
+- Impact: Explain how the swell and wind affect the surf, focusing on what this means for the surfer (e.g., wave quality, difficulty).
+- Summary: One sentence summarizing the overall surf experience.
+- Optional Surf Insight: A brief, integrated surfing fact (without labeling it as a "fun fact").
 
-  // Swell direction interpretation
-  let swellDirDesc = waveData.SwD;
-  
-  // Wind direction interpretation
-  let windEffect = "";
-  if (windDir >= 45 && windDir <= 135) windEffect = "cross-shore";
-  else if (windDir > 135 && windDir < 225) windEffect = "onshore";
-  else windEffect = "offshore";
+Additional Data:
+- Combined wave height: ${waveData.WVHT}
+- Wind waves: ${waveData.WWH} @ ${waveData.WWP}
+- Water temp: ${waveData.WTMP}
+- Wave steepness: ${waveData.STEEPNESS}
 
-  // Wave steepness interpretation
-  let steepnessDesc = "";
-  switch (waveData.STEEPNESS) {
-    case "VERY_STEEP":
-      steepnessDesc = "choppy and steep";
-      break;
-    case "STEEP":
-      steepnessDesc = "steep";
-      break;
-    case "AVERAGE":
-      steepnessDesc = "moderate steepness";
-      break;
-    default:
-      steepnessDesc = "gentle";
-  }
-
-  // Temperature description
-  const tempDesc = airTemp < 50 ? "cold" : airTemp < 70 ? "mild" : "warm";
-
-  // Generate concise report
-  return `${waveDesc.charAt(0).toUpperCase() + waveDesc.slice(1)} ${steepnessDesc} waves at ${waveHeight.toFixed(1)} ft. Primary swell from ${swellDirDesc} with ${windEffect} ${tempDesc} winds. Water temp: ${waterTemp.toFixed(1)}°F.`;
+Guidelines: 
+- Use ${waveData.SwH} as the true wave height (based on swell height only)
+- Prioritize clarity, actionable insights, and a surfer-friendly tone
+- Write in present tense
+- Focus on what matters most to surfers
+- Format as flowing paragraphs without bullet points or asterisks
+- Complete all sentences naturally, even if it means going slightly over the word count`;
 }
 
 export async function POST(req: Request) {
@@ -108,12 +74,29 @@ Water Temperature: ${waveData.WTMP}
 Wave Steepness: ${waveData.STEEPNESS}
     `);
 
-    // Generate the surf report using our new function
-    const report = generateSurfReport(waveData);
+    const messages: ChatCompletionMessageParam[] = [
+      {
+        role: "system",
+        content: "You are a technical surf forecaster. You provide concise, accurate surf reports focused on actionable information for surfers."
+      },
+      {
+        role: "user",
+        content: createSurfReportPrompt(waveData)
+      }
+    ];
+
+    const completion = await client.chat.completions.create({
+      messages,
+      model: deployment,
+      temperature: 0.7,
+      max_tokens: 200,  // Increased to allow for natural sentence completion
+      frequency_penalty: 0.5,
+      presence_penalty: 0.3,
+    });
 
     // Return the generated report
     return NextResponse.json({
-      report: report
+      report: completion.choices[0].message.content
     });
 
   } catch (error) {
