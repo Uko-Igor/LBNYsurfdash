@@ -15,90 +15,77 @@ const client = new AzureOpenAI({
 });
 
 interface WaveData {
-  WVHT: string;
-  SwH: string;
-  WWH: string;
-  SwP: string;
-  WWP?: string;
-  APD: string;
-  SwD: string;
-  WDIR: string;
-  ATMP?: string;
-  WTMP: string;
-  STEEPNESS?: string;
+  WVHT: string;  // Wave Height
+  SwH: string;   // Swell Height
+  WWH: string;   // Wind Wave Height
+  SwP: string;   // Swell Period
+  WWP: string;   // Wind Wave Period
+  APD: string;   // Average Period
+  SwD: string;   // Swell Direction
+  WDIR: string;  // Wind Direction
+  ATMP: string;  // Air Temperature
+  WTMP: string;  // Water Temperature
+  STEEPNESS: string; // Wave Steepness
 }
 
 function generateSurfReport(waveData: WaveData): string {
-  // Input validation
-  const requiredKeys = ["WVHT", "SwH", "WWH", "SwP", "APD", "SwD", "WDIR", "WTMP"];
-  const missingKeys = requiredKeys.filter(key => !(key in waveData));
-  if (missingKeys.length > 0) {
-    return `Error: Missing essential data for the surf report: ${missingKeys.join(', ')}`;
+  // Convert string values to numbers
+  const waveHeight = parseFloat(waveData.WVHT);
+  const swellHeight = parseFloat(waveData.SwH);
+  const windWaveHeight = parseFloat(waveData.WWH);
+  const swellPeriod = parseFloat(waveData.SwP);
+  const windWavePeriod = parseFloat(waveData.WWP);
+  const avgPeriod = parseFloat(waveData.APD);
+  const windDir = parseInt(waveData.WDIR);
+  const airTemp = parseFloat(waveData.ATMP);
+  const waterTemp = parseFloat(waveData.WTMP);
+
+  // Check for missing or invalid data
+  if (isNaN(waveHeight) || isNaN(swellHeight) || isNaN(windWaveHeight) || 
+      isNaN(swellPeriod) || isNaN(windWavePeriod) || isNaN(avgPeriod) || 
+      isNaN(windDir) || isNaN(airTemp) || isNaN(waterTemp)) {
+    return "Unable to generate report due to missing or invalid data.";
   }
 
-  try {
-    const waveHeight = parseFloat(waveData.WVHT);
-    const swellHeight = parseFloat(waveData.SwH);
-    const windWaveHeight = parseFloat(waveData.WWH);
-    const swellPeriod = parseFloat(waveData.SwP);
-    const windWavePeriod = waveData.WWP ? parseFloat(waveData.WWP) : 0;
-    const averagePeriod = parseFloat(waveData.APD);
-    const swellDirection = waveData.SwD;
-    const windDirection = waveData.WDIR;
-    const airTemperature = waveData.ATMP ? parseFloat(waveData.ATMP) : "N/A";
-    const waterTemperature = parseFloat(waveData.WTMP);
-    const steepness = waveData.STEEPNESS || "N/A";
+  // Wave height interpretation
+  let waveDesc = "";
+  if (waveHeight < 1) waveDesc = "very small";
+  else if (waveHeight < 2) waveDesc = "small";
+  else if (waveHeight < 3) waveDesc = "mild";
+  else if (waveHeight < 4) waveDesc = "moderate";
+  else if (waveHeight < 6) waveDesc = "considerable";
+  else waveDesc = "large";
 
-    let report = `Surf Report:\n`;
-    report += `Wave Height: ${waveHeight.toFixed(1)}ft (Combined: ${swellHeight.toFixed(1)}ft swell + ${windWaveHeight.toFixed(1)}ft wind wave)\n`;
-    report += `Swell Period: ${swellPeriod.toFixed(1)}s, Average Period: ${averagePeriod.toFixed(1)}s\n`;
+  // Swell direction interpretation
+  let swellDirDesc = waveData.SwD;
+  
+  // Wind direction interpretation
+  let windEffect = "";
+  if (windDir >= 45 && windDir <= 135) windEffect = "cross-shore";
+  else if (windDir > 135 && windDir < 225) windEffect = "onshore";
+  else windEffect = "offshore";
 
-    // Swell and Wind Direction Interpretation
-    report += `Swell Direction: ${swellDirection}, Wind Direction: ${windDirection}\n`;
-    if (swellDirection.toUpperCase().includes("NW") && windDirection.toUpperCase().includes("NW")) {
-      report += `  -> Onshore wind, expect choppy conditions.\n`;
-    } else if (
-      (swellDirection.toUpperCase().includes("SW") || swellDirection.toUpperCase().includes("W")) && 
-      (windDirection.toUpperCase().includes("N") || windDirection.toUpperCase().includes("NE"))
-    ) {
-      report += `  -> Offshore wind, expect cleaner, groomed waves.\n`;
-    } else if (
-      (swellDirection.toUpperCase().includes("SE") || swellDirection.toUpperCase().includes("E")) && 
-      (windDirection.toUpperCase().includes("W") || windDirection.toUpperCase().includes("NW"))
-    ) {
-      report += `  -> Offshore wind, expect cleaner, groomed waves.\n`;
-    } else {
-      report += `  -> Wind and swell directions are different, cross-shore conditions may vary.\n`;
-    }
-
-    if (windWavePeriod) {
-      report += `Wind Wave Period: ${windWavePeriod.toFixed(1)}s\n`;
-    }
-
-    if (steepness !== "N/A") {
-      report += `Wave Steepness: ${steepness}`;
-      if (steepness === "VERY_STEEP") {
-        report += ` (Expect fast, barreling waves, for experienced surfers).`;
-      } else if (steepness === "STEEP") {
-        report += ` (Expect relatively fast breaking waves).`;
-      } else if (steepness === "AVERAGE") {
-        report += ` (Average steepness).`;
-      } else if (steepness === "SWELL") {
-        report += ` (Expect gentle, slower breaking waves, potentially good for beginners).`;
-      }
-      report += `\n`;
-    }
-
-    report += `Water Temperature: ${waterTemperature.toFixed(1)}°F`;
-    if (airTemperature !== "N/A") {
-      report += `, Air Temperature: ${airTemperature.toFixed(1)}°F`;
-    }
-
-    return report;
-
-  } catch (error) {
-    return `Error: Invalid data format in input. Check data types. (${error})`;
+  // Wave steepness interpretation
+  let steepnessDesc = "";
+  switch (waveData.STEEPNESS) {
+    case "VERY_STEEP":
+      steepnessDesc = "choppy and steep";
+      break;
+    case "STEEP":
+      steepnessDesc = "steep";
+      break;
+    case "AVERAGE":
+      steepnessDesc = "moderate steepness";
+      break;
+    default:
+      steepnessDesc = "gentle";
   }
+
+  // Temperature description
+  const tempDesc = airTemp < 50 ? "cold" : airTemp < 70 ? "mild" : "warm";
+
+  // Generate concise report
+  return `${waveDesc.charAt(0).toUpperCase() + waveDesc.slice(1)} ${steepnessDesc} waves at ${waveHeight.toFixed(1)} ft. Primary swell from ${swellDirDesc} with ${windEffect} ${tempDesc} winds. Water temp: ${waterTemp.toFixed(1)}°F.`;
 }
 
 export async function POST(req: Request) {
@@ -128,6 +115,7 @@ Wave Steepness: ${waveData.STEEPNESS}
     return NextResponse.json({
       report: report
     });
+
   } catch (error) {
     console.error('Error generating surf report:', error);
     return NextResponse.json(
